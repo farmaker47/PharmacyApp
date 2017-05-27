@@ -2,19 +2,19 @@ package com.george.pharmacyapp;
 
 import android.app.Activity;
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -55,6 +55,17 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
         Intent intent = getIntent();
         mCurrentPharmacyUri = intent.getData();
 
+        if (mCurrentPharmacyUri == null) {
+            setTitle("Add a Product");
+            // Invalidate the options menu, so the "Delete" menu option can be hidden.
+            // (It doesn't make sense to delete a pet that hasn't been created yet.)
+            invalidateOptionsMenu();
+
+        } else {
+            setTitle("Edit Product");
+            getSupportLoaderManager().initLoader(PHARMACY_EDIT_LOADER, null, this);
+        }
+
         mEditName = (EditText) findViewById(R.id.editTextName);
         mEditQuantity = (EditText) findViewById(R.id.editTextQuantity);
         mEditPrice = (EditText) findViewById(R.id.editTextPrice);
@@ -66,11 +77,10 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
                 getImageFromGallery();
             }
         });
-        Log.e(LOG_TAG,mCurrentPharmacyUri.toString());
+        /*Log.e(LOG_TAG,mCurrentPharmacyUri.toString());*/
 
         mdbHelper = new PharmacyDBHelper(this);
 
-        getSupportLoaderManager().initLoader(PHARMACY_EDIT_LOADER, null, this);
 
     }
 
@@ -89,12 +99,14 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_delete) {
+            showDeleteConfirmationDialog();
             return true;
-        }if(id == R.id.action_save){
+        }
+        if (id == R.id.action_save) {
             insertPet();
             DatabaseUtil.copyDatabaseToExtStg(this);
-            Toast.makeText(getBaseContext(),"Copied to DB",Toast.LENGTH_SHORT).show();
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
@@ -153,6 +165,74 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
 
     private void insertPet() {
 
+        if (mCurrentPharmacyUri == null) {
+            String nameString = mEditName.getText().toString().trim();
+            String quantityString = mEditQuantity.getText().toString().trim();
+            String priceString = mEditPrice.getText().toString().trim();
+            String imageString;
+
+            if(imageUri==null){
+                imageString="";
+            }else{
+                imageString = imageUri.toString();
+            }
+
+            ContentValues values = new ContentValues();
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_NAME, nameString);
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_QUANTITY, quantityString);
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_PRICE, priceString);
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_IMAGE, imageString);
+
+
+            Uri uri = getContentResolver().insert(PharmacyContract.PharmacyEntry.CONTENT_URI, values);
+
+            // Show a toast message depending on whether or not the insertion was successful
+            if (uri == null) {
+                // If the new content URI is null, then there was an error with insertion.
+                Toast.makeText(this, "Failed",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the insertion was successful and we can display a toast.
+                Toast.makeText(this, "Success",
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            String nameString = mEditName.getText().toString().trim();
+            String quantityString = mEditQuantity.getText().toString().trim();
+            String priceString = mEditPrice.getText().toString().trim();
+            String imageString;
+
+            if(imageUri==null){
+                imageString="";
+            }else{
+                imageString = imageUri.toString();
+            }
+
+            ContentValues values = new ContentValues();
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_NAME, nameString);
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_QUANTITY, quantityString);
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_PRICE, priceString);
+            values.put(PharmacyContract.PharmacyEntry.COLUMN_IMAGE, imageString);
+
+            int rowsAffected = getContentResolver().update(mCurrentPharmacyUri, values, null, null);
+
+            // Show a toast message depending on whether or not the update was successful.
+            if (rowsAffected == 0) {
+                // If no rows were affected, then there was an error with the update.
+                Toast.makeText(this, "fail",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the update was successful and we can display a toast.
+                Toast.makeText(this, "Success",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+
+
+        // Otherwise this is an EXISTING pet, so update the pet with content URI: mCurrentPetUri
+        // and pass in the new ContentValues. Pass in null for the selection and selection args
+        // because mCurrentPetUri will already identify the correct row in the database that
+        // we want to modify.
         /*if(mCurrentPharmacyUri==null){
             // Read from input fields
             // Use trim to eliminate leading or trailing white space
@@ -197,42 +277,61 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
         }else {*/
 
 
-            // Otherwise this is an EXISTING pet, so update the pet with content URI: mCurrentPetUri
-            // and pass in the new ContentValues. Pass in null for the selection and selection args
-            // because mCurrentPetUri will already identify the correct row in the database that
-            // we want to modify.
-            String nameString = mEditName.getText().toString().trim();
-            String quantityString = mEditQuantity.getText().toString().trim();
-            String priceString = mEditPrice.getText().toString().trim();
-            String imageString = imageUri.toString();;
-
-            ContentValues values = new ContentValues();
-            values.put(PharmacyContract.PharmacyEntry.COLUMN_NAME, nameString);
-            values.put(PharmacyContract.PharmacyEntry.COLUMN_QUANTITY, quantityString);
-            values.put(PharmacyContract.PharmacyEntry.COLUMN_PRICE, priceString);
-            values.put(PharmacyContract.PharmacyEntry.COLUMN_IMAGE, imageString);
 
 
-
-            Uri uri = getContentResolver().insert(PharmacyContract.PharmacyEntry.CONTENT_URI, values);
-
-        // Show a toast message depending on whether or not the insertion was successful
-        if (uri == null) {
-            // If the new content URI is null, then there was an error with insertion.
-            Toast.makeText(this, "Failed",
-                    Toast.LENGTH_SHORT).show();
-        } else {
-            // Otherwise, the insertion was successful and we can display a toast.
-            Toast.makeText(this, "Success",
-                    Toast.LENGTH_SHORT).show();
-        }
 
 
       /*  }*/
 
     }
 
-    private void getImageFromGallery(){
+    private void showDeleteConfirmationDialog() {
+        // Create an AlertDialog.Builder and set the message, and click listeners
+        // for the postivie and negative buttons on the dialog.
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("DELETE PRODUCT");
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Delete" button, so delete the pet.
+                deleteProduct();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Cancel" button, so dismiss the dialog
+                // and continue editing the pet.
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        // Create and show the AlertDialog
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    private void deleteProduct() {
+
+        int rowsAffected = getContentResolver().delete(mCurrentPharmacyUri, null, null);
+
+        // Show a toast message depending on whether or not the update was successful.
+        if (rowsAffected == 0) {
+            // If no rows were affected, then there was an error with the update.
+            Toast.makeText(this, "fail",
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            // Otherwise, the update was successful and we can display a toast.
+            Toast.makeText(this, "Success",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        finish();
+
+    }
+
+
+    private void getImageFromGallery() {
         Intent intent;
 
         if (Build.VERSION.SDK_INT < 19) {
