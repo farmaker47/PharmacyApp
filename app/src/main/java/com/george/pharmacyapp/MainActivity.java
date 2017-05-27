@@ -1,19 +1,29 @@
 package com.george.pharmacyapp;
 
+
+import android.content.ContentUris;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
+import android.widget.ListView;
 
 import com.george.pharmacyapp.data.PharmacyContract;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
+
+    private PharmacyCursorAdapter mCursorAdapter;
+
+    private static final int PRODUCT_LOADER = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +43,30 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        ListView list = (ListView)findViewById(R.id.list);
+        View emptyView = findViewById(R.id.empty_view);
+        list.setEmptyView(emptyView);
+
+        mCursorAdapter = new PharmacyCursorAdapter(this,null);
+
+        list.setAdapter(mCursorAdapter);
+
+        getSupportLoaderManager().initLoader(PRODUCT_LOADER,null,this);
+
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long id) {
+                Intent intent = new Intent(MainActivity.this,EditPharmacyItem.class);
+
+                Uri currentPetUri = ContentUris.withAppendedId(PharmacyContract.PharmacyEntry.CONTENT_URI,id);
+
+                intent.setData(currentPetUri);
+                startActivity(intent);
+            }
+        });
+
+
     }
 
     @Override
@@ -55,5 +89,41 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    @Override
+    public android.support.v4.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String[] projection = {
+                PharmacyContract.PharmacyEntry._ID,
+                PharmacyContract.PharmacyEntry.COLUMN_NAME,
+                PharmacyContract.PharmacyEntry.COLUMN_PRICE,
+                PharmacyContract.PharmacyEntry.COLUMN_QUANTITY };
+
+        // Perform a query on the pets table
+        /*Cursor cursor = db.query(
+                PetEntry.TABLE_NAME,   // The table to query
+                projection,            // The columns to return
+                null,                  // The columns for the WHERE clause
+                null,                  // The values for the WHERE clause
+                null,                  // Don't group the rows
+                null,                  // Don't filter by row groups
+                null);                   // The sort order*/
+
+
+        return new CursorLoader(this,
+                PharmacyContract.PharmacyEntry.CONTENT_URI,
+                projection,
+                null,null,null);
+    }
+
+    @Override
+    public void onLoadFinished(android.support.v4.content.Loader<Cursor> loader, Cursor data) {
+        mCursorAdapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(android.support.v4.content.Loader<Cursor> loader) {
+        mCursorAdapter.swapCursor(null);
     }
 }

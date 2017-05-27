@@ -70,7 +70,7 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
 
         mdbHelper = new PharmacyDBHelper(this);
 
-        /*getSupportLoaderManager().initLoader(PHARMACY_EDIT_LOADER, null, this);*/
+        getSupportLoaderManager().initLoader(PHARMACY_EDIT_LOADER, null, this);
 
     }
 
@@ -103,7 +103,7 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
     @Override
     public Loader onCreateLoader(int i, Bundle bundle) {
 
-        // The projection contaains all the columns since the activity displays all the product data
+        // The projection contains all the columns since the activity displays all the product data
         String[] projection = {
                 PharmacyContract.PharmacyEntry._ID,
                 PharmacyContract.PharmacyEntry.COLUMN_NAME,

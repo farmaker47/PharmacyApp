@@ -70,8 +70,40 @@ public class PharmacyProvider extends ContentProvider {
 
     @Nullable
     @Override
-    public Cursor query(Uri uri, String[] strings, String s, String[] strings1, String s1) {
-        return null;
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        SQLiteDatabase database = mDbHelper.getReadableDatabase();
+
+        Cursor cursor = null;
+
+        int match = sUriMatcher.match(uri);
+        switch (match){
+            case PRODUCT:
+                cursor = database.query(
+                        PharmacyContract.PharmacyEntry.TABLE_NAME,   // The table to query
+                        projection,            // The columns to return
+                        selection,                  // The columns for the WHERE clause
+                        selectionArgs,                  // The values for the WHERE clause
+                        null,                  // Don't group the rows
+                        null,                  // Don't filter by row groups
+                        sortOrder);                   // The sort order
+                break;
+            case PRODUCT_ID:
+                selection = PharmacyContract.PharmacyEntry._ID + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+
+                // This will perform a query on the pets table where the _id equals 3 to return a
+                // Cursor containing that row of the table.
+                cursor = database.query(PharmacyContract.PharmacyEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+            default:
+                throw new IllegalArgumentException("cannot query unknown "+ uri);
+        }
+
+        //if the uri changes,we know we have to update cursor
+        cursor.setNotificationUri(getContext().getContentResolver(),uri);
+
+        return cursor;
     }
 
     @Nullable
