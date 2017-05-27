@@ -132,13 +132,13 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             // Extract out the value from the Cursor for the given column index
             String name = cursor.getString(nameColumnIndex);
             String image = cursor.getString(imageColumnIndex);
-            int quantity = cursor.getInt(quantityColumnIndex);
-            int price = cursor.getInt(priceColumnIndex);
+            String quantity = cursor.getString(quantityColumnIndex);
+            String price = cursor.getString(priceColumnIndex);
 
             // Update the views on the screen with the values from the database
             mEditName.setText(name);
             mEditQuantity.setText(quantity);
-            mEditPrice.setText(Integer.toString(price));
+            mEditPrice.setText(price);
 
             imageUri = Uri.parse(image);
             mImage.setImageBitmap(getBitmapFromUri(imageUri));
