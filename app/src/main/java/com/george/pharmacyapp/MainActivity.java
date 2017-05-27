@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private PharmacyCursorAdapter mCursorAdapter;
 
     private static final int PRODUCT_LOADER = 3;
+    private ListView list;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         });
 
-        ListView list = (ListView)findViewById(R.id.list);
+        list = (ListView)findViewById(R.id.list);
         View emptyView = findViewById(R.id.empty_view);
         list.setEmptyView(emptyView);
 
@@ -87,8 +88,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            showDeleteConfirmationDialog();
+        if (id == R.id.action_delete_all) {
+
+            int itemCount = list.getAdapter().getCount();
+            if(itemCount==0){
+                Toast.makeText(this,"No items to delete",Toast.LENGTH_SHORT).show();
+                return true;
+            }else{
+                showDeleteConfirmationDialog();
+            }
             return true;
         }
 
@@ -128,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         // Show a toast message depending on whether or not the update was successful.
         if (rowsAffected == 0) {
             // If no rows were affected, then there was an error with the update.
-            Toast.makeText(this, "fail",
+            Toast.makeText(this, "No items to delete!",
                     Toast.LENGTH_SHORT).show();
         } else {
             // Otherwise, the update was successful and we can display a toast.

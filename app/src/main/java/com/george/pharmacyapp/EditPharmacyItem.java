@@ -10,7 +10,9 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.app.ShareCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AlertDialog;
@@ -19,7 +21,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -35,9 +39,13 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
 
     private EditText mEditName, mEditQuantity, mEditPrice;
     private ImageView mImage;
+    private ImageButton mMinusButton, mPlusButton;
+    private Button mOrderButton,mDeleteButton;
+
 
     private final int PHARMACY_EDIT_LOADER = 0;
     private static final int PICK_IMAGE_REQUEST = 0;
+    private static final int SEND_MAIL_REQUEST = 1;
 
     private Uri mCurrentPharmacyUri;
 
@@ -47,10 +55,25 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
 
     private PharmacyDBHelper mdbHelper;
 
+    private int quantity = 0;
+
+    private String editName,editPrice,editQuantity,editImage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_pharmacy_item);
+
+        mEditName = (EditText) findViewById(R.id.editTextName);
+        mEditQuantity = (EditText) findViewById(R.id.editTextQuantity);
+        mEditPrice = (EditText) findViewById(R.id.editTextPrice);
+        mImage = (ImageView) findViewById(R.id.image);
+
+        mOrderButton = (Button)findViewById(R.id.orderButton);
+        mDeleteButton = (Button)findViewById(R.id.deleteButton);
+
+        mMinusButton = (ImageButton) findViewById(R.id.minusButton);
+        mPlusButton = (ImageButton) findViewById(R.id.plusButton);
 
         Intent intent = getIntent();
         mCurrentPharmacyUri = intent.getData();
@@ -60,16 +83,12 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             // Invalidate the options menu, so the "Delete" menu option can be hidden.
             // (It doesn't make sense to delete a pet that hasn't been created yet.)
             invalidateOptionsMenu();
+            mDeleteButton.setVisibility(View.INVISIBLE);
 
         } else {
             setTitle("Edit Product");
             getSupportLoaderManager().initLoader(PHARMACY_EDIT_LOADER, null, this);
         }
-
-        mEditName = (EditText) findViewById(R.id.editTextName);
-        mEditQuantity = (EditText) findViewById(R.id.editTextQuantity);
-        mEditPrice = (EditText) findViewById(R.id.editTextPrice);
-        mImage = (ImageView) findViewById(R.id.image);
 
         mImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -79,15 +98,75 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
         });
         /*Log.e(LOG_TAG,mCurrentPharmacyUri.toString());*/
 
+        mMinusButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String editTextCurrentQuantity = mEditQuantity.getText().toString().trim();
+                if (editTextCurrentQuantity.equals("")|| editTextCurrentQuantity.equals("0")){
+                    quantity=0;
+                    return;
+                }else{
+                    quantity = Integer.parseInt(editTextCurrentQuantity);
+                    quantity -= 1;
+                }
+                display(quantity);
+
+            }
+        });
+
+        mPlusButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String editTextCurrentQuantity = mEditQuantity.getText().toString().trim();
+                if (editTextCurrentQuantity.equals("")){
+                    quantity=0;
+                }else{
+                    quantity = Integer.parseInt(editTextCurrentQuantity);
+                }
+                quantity += 1;
+                display(quantity);
+            }
+        });
+
+        mOrderButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendEmail();
+            }
+        });
+
+        mDeleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showDeleteConfirmationDialog();
+            }
+        });
+
         mdbHelper = new PharmacyDBHelper(this);
 
 
     }
 
+    private void display(int quantity){
+        mEditQuantity.setText(String.valueOf(quantity));
+    }
+
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_edit_item, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        // If this is a new pet, hide the "Delete" menu item.
+        if (mCurrentPharmacyUri == null) {
+            MenuItem menuItem = menu.findItem(R.id.action_delete);
+            menuItem.setVisible(false);
+        }
         return true;
     }
 
@@ -142,17 +221,17 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             int imageColumnIndex = cursor.getColumnIndex(PharmacyContract.PharmacyEntry.COLUMN_IMAGE);
 
             // Extract out the value from the Cursor for the given column index
-            String name = cursor.getString(nameColumnIndex);
-            String image = cursor.getString(imageColumnIndex);
-            String quantity = cursor.getString(quantityColumnIndex);
-            String price = cursor.getString(priceColumnIndex);
+            editName = cursor.getString(nameColumnIndex);
+            editImage = cursor.getString(imageColumnIndex);
+            editQuantity = cursor.getString(quantityColumnIndex);
+            editPrice = cursor.getString(priceColumnIndex);
 
             // Update the views on the screen with the values from the database
-            mEditName.setText(name);
-            mEditQuantity.setText(quantity);
-            mEditPrice.setText(price);
+            mEditName.setText(editName);
+            mEditQuantity.setText(editQuantity);
+            mEditPrice.setText(editPrice);
 
-            imageUri = Uri.parse(image);
+            imageUri = Uri.parse(editImage);
             mImage.setImageBitmap(getBitmapFromUri(imageUri));
 
         }
@@ -171,9 +250,9 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             String priceString = mEditPrice.getText().toString().trim();
             String imageString;
 
-            if(imageUri==null){
-                imageString="";
-            }else{
+            if (imageUri == null) {
+                imageString = "";
+            } else {
                 imageString = imageUri.toString();
             }
 
@@ -202,9 +281,9 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             String priceString = mEditPrice.getText().toString().trim();
             String imageString;
 
-            if(imageUri==null){
-                imageString="";
-            }else{
+            if (imageUri == null) {
+                imageString = "";
+            } else {
                 imageString = imageUri.toString();
             }
 
@@ -412,6 +491,41 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             } catch (IOException ioe) {
 
             }
+        }
+    }
+
+    private void sendEmail(){
+        if (editName != null) {
+            String subject = "Order details";
+            String stream = "Hello Sir! Please send us the below order \n\n"
+                    + "Name:\t" + editName + "\n"
+                    + "Quantity:\t" + editQuantity + "\n"
+                    + "Price:\t" + editPrice + "\n"
+                    ;
+
+            Intent shareIntent = ShareCompat.IntentBuilder.from(this)
+                    .setStream(imageUri)
+                    .setSubject(subject)
+                    .setText(stream)
+                    .getIntent();
+
+            // Provide read access
+            shareIntent.setData(imageUri);
+            shareIntent.setType("message/rfc822");
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            if (Build.VERSION.SDK_INT < 21) {
+                shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            } else {
+                shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+            }
+
+
+            startActivityForResult(Intent.createChooser(shareIntent, "Share with"), SEND_MAIL_REQUEST);
+
+        } else {
+            Toast.makeText(this,"No details available",Toast.LENGTH_SHORT).show();
+            return;
         }
     }
 
