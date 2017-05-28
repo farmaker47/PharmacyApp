@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final int PRODUCT_LOADER = 3;
     private ListView list;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,9 +64,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long id) {
                 Intent intent = new Intent(MainActivity.this,EditPharmacyItem.class);
 
-                Uri currentPetUri = ContentUris.withAppendedId(PharmacyContract.PharmacyEntry.CONTENT_URI,id);
+                Uri currentProductUri = ContentUris.withAppendedId(PharmacyContract.PharmacyEntry.CONTENT_URI,id);
 
-                intent.setData(currentPetUri);
+                intent.setData(currentProductUri);
                 startActivity(intent);
             }
         });
