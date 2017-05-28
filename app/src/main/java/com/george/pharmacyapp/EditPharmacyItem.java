@@ -183,7 +183,7 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
             return true;
         }
         if (id == R.id.action_save) {
-            insertPet();
+            insertProduct();
             DatabaseUtil.copyDatabaseToExtStg(this);
             finish();
         }
@@ -242,7 +242,7 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
 
     }
 
-    private void insertPet() {
+    private void insertProduct() {
 
         if (mCurrentPharmacyUri == null) {
             String nameString = mEditName.getText().toString().trim();
@@ -272,7 +272,7 @@ public class EditPharmacyItem extends AppCompatActivity implements LoaderManager
                         Toast.LENGTH_SHORT).show();
             } else {
                 // Otherwise, the insertion was successful and we can display a toast.
-                Toast.makeText(this, "Success",
+                Toast.makeText(this, "Successii",
                         Toast.LENGTH_SHORT).show();
             }
         } else {

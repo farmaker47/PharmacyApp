@@ -51,6 +51,8 @@ public class PharmacyCursorAdapter extends CursorAdapter {
         quantity.setText(quantityProduct);
         price.setText(priceProduct);
 
+        final int positionOfCurrentListItem = cursor.getInt(cursor.getColumnIndex(PharmacyContract.PharmacyEntry._ID));
+
         salesButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -70,8 +72,6 @@ public class PharmacyCursorAdapter extends CursorAdapter {
                     View parentRow = (View) view.getParent();
                     ListView listView = (ListView) parentRow.getParent();
                     final int position = listView.getPositionForView(parentRow);*/
-
-                final int positionOfCurrentListItem = cursor.getInt(cursor.getColumnIndex(PharmacyContract.PharmacyEntry._ID));
 
 
                 Uri listItemUri = ContentUris.withAppendedId(PharmacyContract.PharmacyEntry.CONTENT_URI, positionOfCurrentListItem);
